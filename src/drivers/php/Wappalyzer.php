@@ -6,7 +6,7 @@ class Wappalyzer
 		$debug              = false,
 		$curlUserAgent      = 'Mozilla/5.0 (X11; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1',
 		$curlFollowLocation = false,
-		$curlTimeout        = 3,
+		$curlTimeout        = 5,
 		$curlMaxRedirects   = 3
 		;
 
@@ -113,12 +113,16 @@ class Wappalyzer
             }
             
             $response = curl_exec($ch);
+            //var_dump($response);
             
             if ( curl_errno($ch) !== 0 ) {
                 throw new WappalyzerException('cURL error: ' . curl_error($ch));
             }
             
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if ( $this->debug ) {
+                echo 'debug: http code: '.$httpCode."\n";
+            }
             
             if ( $httpCode!=200 && $httpCode<300 && $httpCode>=400 ) {
                 throw new WappalyzerException('cURL request returned HTTP code ' . $httpCode);
