@@ -1,6 +1,6 @@
 #!/usr/bin/php
 <?php
-
+x
 require('WappalyzerException.php');
 require('Wappalyzer.php');
 

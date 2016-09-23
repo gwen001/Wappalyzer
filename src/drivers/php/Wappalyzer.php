@@ -27,7 +27,7 @@ class Wappalyzer
 
 		$this->url = $url;
 
-		$json = json_decode(file_get_contents('apps.json'));
+		$json = json_decode(file_get_contents(dirname(__FILE__).'/apps.json'));
 
 		$this->apps       = $json->apps;
 		$this->categories = $json->categories;
@@ -97,59 +97,60 @@ class Wappalyzer
             $loop = false;
 
             $ch = curl_init($url);
-            
+
             curl_setopt_array($ch, array(
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_HEADER         => true,
                 CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_FOLLOWLOCATION => $this->curlFollowLocation,
                 CURLOPT_MAXREDIRS      => $this->curlMaxRedirects,
                 CURLOPT_TIMEOUT        => $this->curlTimeout,
                 CURLOPT_USERAGENT      => $this->curlUserAgent
 			));
-            
+
             if ( $this->debug ) {
                 echo 'cURL request: ' . $url . "\n";
             }
-            
+
             $response = curl_exec($ch);
             //var_dump($response);
-            
+
             if ( curl_errno($ch) !== 0 ) {
                 throw new WappalyzerException('cURL error: ' . curl_error($ch));
             }
-            
+
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             if ( $this->debug ) {
                 echo 'debug: http code: '.$httpCode."\n";
             }
-            
+
             if ( $httpCode!=200 && $httpCode<300 && $httpCode>=400 ) {
                 throw new WappalyzerException('cURL request returned HTTP code ' . $httpCode);
             }
-            
+
             $result = new stdClass();
-            $result->url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);            
+            $result->url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
             $result->host = parse_url($result->url, PHP_URL_HOST);
             $result->scheme = parse_url($result->url, PHP_URL_SCHEME);
             $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-            
+
             $result->html = substr($response, $headerSize);
             $result->html = mb_check_encoding($result->html, 'UTF-8') ? $result->html : utf8_encode($result->html);
-            
+
             $headers = trim(substr($response, 0, $headerSize));
             $headers = preg_split('/^\s*$/m', $headers);
             $headers = end($headers);
-            
+
             $lines = array_slice(explode("\n", $headers), 1);
-            
+
             foreach ( $lines as $line ) {
                 if ( strpos(trim($line), ': ') !== false ) {
                     list($key, $value) = explode(': ', trim($line, "\r"));
                     $result->headers[strtolower($key)] = $value;
                 }
             }
-            
+
             if( isset($result->headers['location']) ) {
                 $tmp = parse_url( $result->headers['location'] );
                 if( isset($tmp['host']) ) {
@@ -166,7 +167,7 @@ class Wappalyzer
             }
         }
         while( $loop );
-        
+
 		return $result;
 	}
 
